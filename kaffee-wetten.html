@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏪 Kaffeemaschine Wetten 2026</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+        body { max-width: 1200px; margin: 0 auto; padding: 20px; background: #f8f9fa; }
+        .container { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; text-align: center; margin-bottom: 8px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; }
+        .admin-only { background: #fff3cd; border-color: #ffeaa7; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; }
+        input, select, button { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+        .btn { background: #1a73e8; color: white; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn:hover { background: #1557b0; transform: translateY(-1px); }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .winner { background: #d4edda !important; font-weight: bold; color: #155724; }
+        .quote-low { color: #28a745; font-weight: bold; }
+        .quote-high { color: #dc3545; }
+        @media (max-width: 768px) { body { padding: 10px; } table { font-size: 12px; } th, td { padding: 8px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏪 Kaffeemaschine Wetten</h1>
+        <p class="subtitle">Erstes funktionierender Kaffee • Live-Quoten • Automatische Auszahlung</p>
+        
+        <!-- ERGEBNIS ADMIN-BEREICH -->
+        <div class="section admin-only" id="adminSection">
+            <h3>⚙️ Admin: Offizielles Ergebnis</h3>
+            <table>
+                <tr><td>Datum:</td><td><input type="date" id="resultDate" value="2026-03-05"></td></tr>
+                <tr><td>Uhrzeit:</td><td><input type="time" id="resultTime" value="14:30"></td></tr>
+                <tr><td><button class="btn btn-success" onclick="setResult()">✅ Ergebnis setzen (final!)</button></td>
+                 <td id="slotDisplay">-</td></tr>
+            </table>
+        </div>
+
+        <!-- WETTEN EINGABE -->
+        <div class="section">
+            <h3>🎯 Neue Wette platzieren</h3>
+            <table>
+                <tr>
+                    <td>Spieler:</td><td><input type="text" id="playerName" placeholder="Dein Name" required></td>
+                    <td>Einsatz:</td><td><input type="number" id="betAmount" value="5" min="1" max="50" step="0.5"></td>
+                </tr>
+                <tr>
+                    <td>Datum:</td><td><input type="date" id="betDate" required></td>
+                    <td>Slot:</td><td>
+                        <select id="betSlot">
+                            <option value="Vormittag">☀️ Vormittag (00-11:59)</option>
+                            <option value="Nachmittag">🌆 Nachmittag (12-23:59)</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr><td colspan="4"><button class="btn" onclick="addBet()" style="width:100%;">💰 Wette platzieren</button></td></tr>
+            </table>
+        </div>
+
+        <!-- LIVE WETTEN ÜBERSICHT -->
+        <div class="section">
+            <h3>📊 Alle Wetten (Live)</h3>
+            <div id="betsTable"></div>
+        </div>
+
+        <!-- LIVE STATS & QUOTEN -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div style="font-size: 24px; font-weight: bold;" id="totalPot">0€</div>
+                <div>Gesamtpot</div>
+            </div>
+            <div class="stat-card">
+                <div style="font-size: 24px; font-weight: bold;" id="winnerCount">0</div>
+                <div>Gewinner</div>
+            </div>
+            <div class="stat-card">
+                <div style="font-size: 24px; font-weight: bold;" id="avgPayout">0€</div>
+                <div>Ø pro Gewinner</div>
+            </div>
+            <div class="stat-card">
+                <div style="font-size: 24px; font-weight: bold;" id="marketStatus">Offen</div>
+                <div>Status</div>
+            </div>
+        </div>
+
+        <!-- QUOTEN-TABELLE -->
+        <div class="section">
+            <h3>🎲 Live-Quoten (Polymarket-Style)</h3>
+            <div id="quotesTable"></div>
+        </div>
+    </div>
+
+    <script>
+        let bets = JSON.parse(localStorage.getItem('kaffeeBets')) || [];
+        let resultSet = localStorage.getItem('kaffeeResult') !== null;
+        let result = JSON.parse(localStorage.getItem('kaffeeResult')) || {};
+
+        function saveData() {
+            localStorage.setItem('kaffeeBets', JSON.stringify(bets));
+            if (Object.keys(result).length) localStorage.setItem('kaffeeResult', JSON.stringify(result));
+        }
+
+        function renderBets() {
+            const table = document.getElementById('betsTable');
+            if (bets.length === 0) {
+                table.innerHTML = '<p>Noch keine Wetten. Sei der Erste! 🎉</p>';
+                return;
+            }
+
+            let html = '<table><tr><th>Spieler</th><th>Einsatz</th><th>Datum</th><th>Slot</th><th>Gewinner?</th><th>Auszahlung</th></tr>';
+            let totalPot = 0, winners = 0, totalWinnerPot = 0;
+
+            bets.forEach((bet, i) => {
+                const isWinner = resultSet && bet.date === result.date && bet.slot === result.slot;
+                const payout = isWinner ? (bet.amount / getWinnerPot()) * totalPot : 0;
+                
+                if (isWinner) {
+                    winners++;
+                    totalWinnerPot += bet.amount;
+                }
+                totalPot += bet.amount;
+
+                html += `<tr ${isWinner ? 'class="winner"' : ''}>
+                    <td>${bet.player}</td>
+                    <td>€${bet.amount}</td>
+                    <td>${bet.date}</td>
+                    <td>${bet.slot}</td>
+                    <td>${isWinner ? '✅' : '-'}</td>
+                    <td ${isWinner ? 'style="font-weight:bold;color:#28a745"' : ''}>€${payout.toFixed(2)}</td>
+                </tr>`;
+            });
+
+            html += '</table>';
+            table.innerHTML = html;
+
+            // Update Stats
+            document.getElementById('totalPot').textContent = `${totalPot.toFixed(0)}€`;
+            document.getElementById('winnerCount').textContent = winners;
+            document.getElementById('avgPayout').textContent = winners > 0 ? `${(totalPot/winners).toFixed(0)}€` : '0€';
+            document.getElementById('marketStatus').textContent = resultSet ? '🟢 GESCHLOSSEN' : '🟡 OFFEN';
+        }
+
+        function getWinnerPot() {
+            return bets.filter(b => resultSet && b.date === result.date && b.slot === result.slot)
+                       .reduce((sum, b) => sum + b.amount, 0);
+        }
+
+        function renderQuotes() {
+            const table = document.getElementById('quotesTable');
+            const slots = [...new Set(bets.map(b => `${b.date} ${b.slot}`))];
+            
+            let html = '<table><tr><th>Slot</th><th>Tipps</th><th>Potanteil</th><th>Quote (1:X)</th></tr>';
+            let totalBets = bets.length;
+            let totalPot = bets.reduce((sum, b) => sum + b.amount, 0);
+
+            slots.forEach(slot => {
+                const [date, timeSlot] = slot.split(' ');
+                const count = bets.filter(b => b.date === date && b.slot === timeSlot).length;
+                const potShare = (count / totalBets * 100).toFixed(1);
+                const quote = totalBets > 0 ? Math.max(1.1, (totalBets / count).toFixed(1)) : '∞';
+                const quoteClass = count < 3 ? 'quote-high' : count > 8 ? 'quote-low' : '';
+
+                html += `<tr>
+                    <td>${date}<br><small>${timeSlot}</small></td>
+                    <td>${count}</td>
+                    <td>${potShare}%</td>
+                    <td class="${quoteClass}">1:${quote}</td>
+                </tr>`;
+            });
+
+            html += '</table>';
+            table.innerHTML = html;
+        }
+
+        function addBet() {
+            const player = document.getElementById('playerName').value.trim();
+            const amount = parseFloat(document.getElementById('betAmount').value);
+            const date = document.getElementById('betDate').value;
+            const slot = document.getElementById('betSlot').value;
+
+            if (!player || !date || amount < 0.5 || amount > 50 || resultSet) {
+                alert(resultSet ? '❌ Wetten geschlossen!' : '❌ Bitte alle Felder korrekt ausfüllen!');
+                return;
+            }
+
+            // Prüfe doppelte Wetten
+            if (bets.some(b => b.player.toLowerCase() === player.toLowerCase())) {
+                alert('❌ Jeder Spieler nur 1 Wette!');
+                return;
+            }
+
+            bets.push({ player, amount, date, slot });
+            saveData();
+            renderBets();
+            renderQuotes();
+
+            // Reset Form
+            document.getElementById('playerName').value = '';
+            document.getElementById('betAmount').value = '5';
+            document.getElementById('betDate').value = '2026-03-05';
+
+            alert('✅ Wette platziert!');
+        }
+
+        function setResult() {
+            const date = document.getElementById('resultDate').value;
+            const time = document.getElementById('resultTime').value;
+            const hour = parseInt(time.split(':')[0]);
+            const slot = hour < 12 ? 'Vormittag' : 'Nachmittag';
+
+            if (!date) {
+                alert('Bitte Datum eingeben!');
+                return;
+            }
+
+            result = { date, time, slot };
+            localStorage.setItem('kaffeeResult', JSON.stringify(result));
+            resultSet = true;
+
+            document.getElementById('slotDisplay').textContent = `${date} ${slot}`;
+            renderBets();
+            renderQuotes();
+            alert('✅ Ergebnis gesetzt! Gewinner automatisch berechnet.');
+        }
+
+        // Initial render
+        renderBets();
+        renderQuotes();
+
+        // Auto-save every minute
+        setInterval(saveData, 60000);
+    </script>
+</body>
+</html>
